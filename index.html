@@ -1,0 +1,256 @@
+<!--BY @Suarez-sh-->
+<!--Facebook: https://www.facebook.com/marco.suarezsh-->
+<!--WhatsApp: +51 963700816-->
+<!--Version de Bootstrap: 4.5.2.-->
+<!--Base de datos: LocalStorage-->
+<!--Si desea cambiar la base de datos no dude en pedir ayuda en mi whatsapp (Mysql, Php)-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tareas-admin--Suarez-sh</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    @media (max-width: 576px) {
+      .btn-acciones {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      .titulo-col {
+        white-space: normal;
+      }
+    }
+    .btn-flotante {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+      }
+  </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h2>Tareas-admin</h2>
+        <input type="text" class="form-control" id="buscador" placeholder="Buscar por nombre de tarea">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th class="fecha-col" style="width: 20%;">Fecha</th>
+              <th class="titulo-col" style="width: 40%;">Título</th>
+              <th class="acciones-col" style="width: 40%;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="listaTareas"></tbody>
+        </table>
+      </div>
+    <br>
+      <button class="btn btn-success btn-flotante" id="btnNuevaTarea" data-toggle="modal" data-target="#modalNuevaTarea">+ Nueva Tarea</button>
+    
+
+  <div id="modalNuevaTarea" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nueva Tarea</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="tituloTarea">Título</label>
+            <input type="text" class="form-control" id="tituloTarea" maxlength="20">
+          </div>
+          <div class="form-group">
+            <label for="contenidoTarea">Contenido</label>
+            <textarea class="form-control" id="contenidoTarea" rows="4"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="guardarNuevaTarea()">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalVerTarea" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Ver Tarea</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <pre id="contenidoVerTarea"></pre>
+        </div>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalEditarTarea" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Tarea</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="tituloEditarTarea">Título</label>
+            <input type="text" class="form-control" id="tituloEditarTarea">
+          </div>
+          <div class="form-group">
+            <label for="contenidoEditarTarea">Contenido</label>
+            <textarea class="form-control" id="contenidoEditarTarea" rows="4"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="guardarEdicionTarea()">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalEliminarTarea" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Eliminar Tarea</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>¿Estás seguro de que deseas eliminar esta tarea?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-dismiss="modal" onclick="confirmarEliminarTarea()">Eliminar</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!--►Script wazaaa, si desea lo puede separar en un archivo .js y aqui hacr su conector con el (<script src="name del js xd"><script>)♥-->
+  <script>
+    let tareaAEditarIndex = -1;
+
+    function cargarTareas() {
+      const tareas = JSON.parse(localStorage.getItem("tareas")) || [];
+      const listaTareas = document.getElementById("listaTareas");
+      listaTareas.innerHTML = "";
+
+      tareas.forEach(function (tarea, index) {
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td>${tarea.fecha}</td>
+          <td>${tarea.titulo}</td>
+          <td>
+            <button class="btn btn-info btn-acciones" onclick="verTarea(${index})">Ver</button>
+            <button class="btn btn-warning btn-acciones" onclick="editarTarea(${index})">Editar</button>
+            <button class="btn btn-danger btn-acciones" onclick="mostrarEliminarTarea(${index})">Eliminar</button>
+          </td>
+        `;
+
+        listaTareas.appendChild(fila);
+      });
+    }
+
+    function verTarea(index) {
+      const tareas = JSON.parse(localStorage.getItem("tareas")) || [];
+      const tarea = tareas[index];
+      document.getElementById("contenidoVerTarea").textContent = tarea.contenido;
+      $("#modalVerTarea").modal("show");
+    }
+
+    function editarTarea(index) {
+      const tareas = JSON.parse(localStorage.getItem("tareas")) || [];
+      const tarea = tareas[index];
+      document.getElementById("tituloEditarTarea").value = tarea.titulo;
+      document.getElementById("contenidoEditarTarea").value = tarea.contenido;
+      tareaAEditarIndex = index;
+      $("#modalEditarTarea").modal("show");
+    }
+
+    function guardarEdicionTarea() {
+      if (tareaAEditarIndex !== -1) {
+        const tareas = JSON.parse(localStorage.getItem("tareas")) || [];
+        const titulo = document.getElementById("tituloEditarTarea").value;
+        const contenido = document.getElementById("contenidoEditarTarea").value;
+        tareas[tareaAEditarIndex] = { ...tareas[tareaAEditarIndex], titulo, contenido };
+        localStorage.setItem("tareas", JSON.stringify(tareas));
+        tareaAEditarIndex = -1;
+        cargarTareas();
+      }
+    }
+
+    function mostrarEliminarTarea(index) {
+      tareaAEditarIndex = index;
+      $("#modalEliminarTarea").modal("show");
+    }
+
+    function confirmarEliminarTarea() {
+      if (tareaAEditarIndex !== -1) {
+        const tareas = JSON.parse(localStorage.getItem("tareas")) || [];
+        tareas.splice(tareaAEditarIndex, 1);
+        localStorage.setItem("tareas", JSON.stringify(tareas));
+        tareaAEditarIndex = -1;
+        cargarTareas();
+      }
+    }
+
+    function guardarNuevaTarea() {
+      const titulo = document.getElementById("tituloTarea").value;
+      const contenido = document.getElementById("contenidoTarea").value;
+      const fecha = new Date().toLocaleString();
+
+      if (titulo && contenido) {
+        const tareas = JSON.parse(localStorage.getItem("tareas")) || [];
+        const nuevaTarea = { titulo, contenido, fecha };
+        tareas.push(nuevaTarea);
+        localStorage.setItem("tareas", JSON.stringify(tareas));
+        cargarTareas();
+        document.getElementById("tituloTarea").value = "";
+        document.getElementById("contenidoTarea").value = "";
+      }
+    }
+
+    function buscarTareas() {
+      const busqueda = document.getElementById("buscador").value.toLowerCase();
+      const tareas = JSON.parse(localStorage.getItem("tareas")) || [];
+      const tareasFiltradas = tareas.filter(tarea => tarea.titulo.toLowerCase().includes(busqueda));
+      const listaTareas = document.getElementById("listaTareas");
+      listaTareas.innerHTML = "";
+
+      tareasFiltradas.forEach(function (tarea, index) {
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td>${tarea.fecha}</td>
+          <td>${tarea.titulo}</td>
+          <td>
+            <button class="btn btn-info btn-acciones" onclick="verTarea(${index})">Ver</button>
+            <button class="btn btn-warning btn-acciones" onclick="editarTarea(${index})">Editar</button>
+            <button class="btn btn-danger btn-acciones" onclick="mostrarEliminarTarea(${index})">Eliminar</button>
+          </td>
+        `;
+
+        listaTareas.appendChild(fila);
+      });
+    }
+
+    document.getElementById("buscador").addEventListener("input", buscarTareas);
+    cargarTareas();
+  </script>
+</body>
+</html>
+<!--    QUIERO CHAMBAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!!!   -->
